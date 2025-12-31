@@ -103,7 +103,10 @@ function AuthForm({ mode, onSubmit, isLoading }: {
             password: "",
             name: "",
             role: "subscriber",
-            phoneNumber: ""
+            phoneNumber: "",
+            university: "",
+            school: "",
+            studentId: ""
         }
     });
 
@@ -161,6 +164,47 @@ function AuthForm({ mode, onSubmit, isLoading }: {
                                     <FormLabel>Mobile Money Number</FormLabel>
                                     <FormControl>
                                         <Input placeholder="097..." {...field} value={field.value || ''} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="university"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>University</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="UNZA" {...field} value={field.value || ''} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="school"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>School</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Natural Sciences" {...field} value={field.value || ''} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <FormField
+                            control={form.control}
+                            name="studentId"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Student ID Number</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="2021..." {...field} value={field.value || ''} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

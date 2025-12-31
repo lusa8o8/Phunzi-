@@ -66,7 +66,10 @@ export default function Dashboard() {
                         <span className="font-bold text-xl text-indigo-900">Phunzi+</span>
                     </div>
                     <div className="flex items-center gap-4">
-                        <span className="text-sm text-gray-600 hidden md:inline">Welcome, {user?.name}</span>
+                        <div className="text-right hidden md:block">
+                            <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
+                            <p className="text-xs text-gray-500">{user?.university} • {user?.school}</p>
+                        </div>
                         <Button variant="ghost" size="sm" onClick={() => logoutMutation.mutate()}>
                             <LogOut className="h-4 w-4" />
                         </Button>

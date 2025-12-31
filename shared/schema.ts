@@ -9,6 +9,9 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   role: text("role", { enum: ["subscriber", "provider"] }).notNull().default("subscriber"),
   phoneNumber: text("phone_number"), // For Mobile Money
+  university: text("university"), // e.g. UNZA
+  school: text("school"), // e.g. Natural Sciences
+  studentId: text("student_id"), // Student ID Number
   bio: text("bio"), // For providers to show off creds (optional for now)
   rating: integer("rating").default(5), // 1-5 stars
 });
@@ -46,6 +49,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
   role: true,
   phoneNumber: true,
+  university: true,
+  school: true,
+  studentId: true,
 });
 
 export const insertCourseSchema = createInsertSchema(courses);

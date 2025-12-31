@@ -62,7 +62,17 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentId++;
-    const user: User = { ...insertUser, id, bio: null, rating: 5, role: insertUser.role || "subscriber" };
+    const user: User = {
+      ...insertUser,
+      id,
+      bio: null,
+      rating: 5,
+      role: insertUser.role || "subscriber",
+      university: insertUser.university || null,
+      school: insertUser.school || null,
+      studentId: insertUser.studentId || null,
+      phoneNumber: insertUser.phoneNumber || null
+    };
     this.users.set(id, user);
     return user;
   }
@@ -106,6 +116,9 @@ export class MemStorage implements IStorage {
       name: "Chanda M.",
       role: "provider",
       phoneNumber: "0977000000",
+      university: "UNZA",
+      school: "Natural Sciences",
+      studentId: "PROV-001",
       bio: "A+ Student in Math & Physics. Regular uploader.",
       rating: 5
     });

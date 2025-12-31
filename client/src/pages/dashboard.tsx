@@ -15,6 +15,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { CreditCard, Smartphone } from "lucide-react";
 
+import { db } from "@/lib/firebase";
+import { collection, getDocs, addDoc, query, where, Timestamp } from "firebase/firestore";
+
 export default function Dashboard() {
     const { user, logoutMutation } = useAuth();
     const [searchTerm, setSearchTerm] = useState("");
@@ -24,29 +27,53 @@ export default function Dashboard() {
 
     const { data: courses, isLoading: coursesLoading } = useQuery<Course[]>({
         queryKey: ["/api/courses"],
+        queryFn: async () => {
+            const querySnapshot = await getDocs(collection(db, "courses"));
+            return querySnapshot.docs.map(doc => ({
+                ...doc.data(),
+                id: doc.id as any
+            } as Course));
+        }
     });
 
     const { data: subscriptions, isLoading: subsLoading } = useQuery<Subscription[]>({
-        queryKey: ["/api/subscriptions"],
+        queryKey: ["/api/subscriptions", user?.id],
+        enabled: !!user,
+        queryFn: async () => {
+            if (!user) return [];
+            const q = query(collection(db, "subscriptions"), where("userId", "==", user.id));
+            const querySnapshot = await getDocs(q);
+            return querySnapshot.docs.map(doc => ({
+                ...doc.data(),
+                id: doc.id as any
+            } as Subscription));
+        }
     });
 
     const subscribeMutation = useMutation({
         mutationFn: async (courseId: number) => {
-            const res = await apiRequest("POST", `/api/courses/${courseId}/subscribe`);
-            return res.json();
+            if (!user) throw new Error("Not authenticated");
+            const subData = {
+                userId: user.id,
+                courseId: courseId,
+                active: true,
+                startDate: Timestamp.now()
+            };
+            const docRef = await addDoc(collection(db, "subscriptions"), subData);
+            return { id: docRef.id, ...subData };
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/subscriptions", user?.id] });
             setSelectedCourse(null);
             toast({
                 title: "Subscribed Successfully",
                 description: "Payment confirmed (Mock). You now have access.",
             });
         },
-        onError: () => {
+        onError: (err: any) => {
             toast({
                 title: "Subscription Failed",
-                description: "Could not process payment.",
+                description: err.message || "Could not process payment.",
                 variant: "destructive"
             });
         }

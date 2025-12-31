@@ -1,8 +1,17 @@
-import { createContext, ReactNode, useContext } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { insertUserSchema, User, InsertUser } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { User, InsertUser } from "@shared/schema";
+import { queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { auth, db } from "@/lib/firebase";
+import {
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged,
+    User as FirebaseUser
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 type AuthContextType = {
     user: User | null;
@@ -17,22 +26,45 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const { toast } = useToast();
-    const {
-        data: user,
-        error,
-        isLoading,
-    } = useQuery<User | undefined, Error>({
-        queryKey: ["/api/user"],
-        queryFn: getQueryFn({ on401: "returnNull" }),
-    });
+    const [user, setUser] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+                    if (userDoc.exists()) {
+                        setUser({
+                            ...userDoc.data(),
+                            id: firebaseUser.uid as any // Using UID as ID
+                        } as User);
+                    } else {
+                        setUser(null);
+                    }
+                } catch (err) {
+                    console.error("Error fetching user profile:", err);
+                    setError(err as Error);
+                }
+            } else {
+                setUser(null);
+            }
+            setIsLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, []);
 
     const loginMutation = useMutation({
         mutationFn: async (credentials: Pick<InsertUser, "username" | "password">) => {
-            const res = await apiRequest("POST", "/api/login", credentials);
-            return await res.json();
-        },
-        onSuccess: (user: User) => {
-            queryClient.setQueryData(["/api/user"], user);
+            // Note: Firebase uses email. We'll treat username as email for simplicity or map it.
+            const userCredential = await signInWithEmailAndPassword(
+                auth,
+                credentials.username.includes("@") ? credentials.username : `${credentials.username}@phunzi.plus`,
+                credentials.password
+            );
+            return userCredential.user;
         },
         onError: (error: Error) => {
             toast({
@@ -45,11 +77,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const registerMutation = useMutation({
         mutationFn: async (credentials: InsertUser) => {
-            const res = await apiRequest("POST", "/api/register", credentials);
-            return await res.json();
-        },
-        onSuccess: (user: User) => {
-            queryClient.setQueryData(["/api/user"], user);
+            const email = credentials.username.includes("@") ? credentials.username : `${credentials.username}@phunzi.plus`;
+            const userCredential = await createUserWithEmailAndPassword(
+                auth,
+                email,
+                credentials.password
+            );
+
+            // Create user profile in Firestore
+            const userProfile: Omit<User, "id"> = {
+                username: credentials.username,
+                password: "HIDDEN", // Don't store plain password in Firestore
+                name: credentials.name,
+                role: credentials.role || "subscriber",
+                phoneNumber: credentials.phoneNumber || null,
+                university: credentials.university || null,
+                school: credentials.school || null,
+                studentId: credentials.studentId || null,
+                bio: null,
+                rating: 5
+            };
+
+            await setDoc(doc(db, "users", userCredential.user.uid), userProfile);
+            return userCredential.user;
         },
         onError: (error: Error) => {
             toast({
@@ -62,10 +112,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logoutMutation = useMutation({
         mutationFn: async () => {
-            await apiRequest("POST", "/api/logout");
+            await signOut(auth);
         },
         onSuccess: () => {
             queryClient.setQueryData(["/api/user"], null);
+            setUser(null);
         },
         onError: (error: Error) => {
             toast({
@@ -79,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return (
         <AuthContext.Provider
             value={{
-                user: user ?? null,
+                user,
                 isLoading,
                 error,
                 loginMutation,

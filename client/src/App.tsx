@@ -9,10 +9,13 @@ import CourseFeed from "@/pages/course-feed";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 
+import AdminSeed from "@/pages/admin-seed";
+
 function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
+      <Route path="/admin-seed" component={AdminSeed} />
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/course/:id" component={CourseFeed} />
       <Route component={NotFound} />

@@ -7,17 +7,38 @@ import { Loader2, ArrowLeft, FileText, Headphones, Calendar, Download, AlertCirc
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 
+import { db } from "@/lib/firebase";
+import { doc, getDoc, collection, getDocs, query, where, orderBy } from "firebase/firestore";
+
 export default function CourseFeed() {
   const [match, params] = useRoute("/course/:id");
-  const id = parseInt(params?.id || "0");
+  const id = params?.id || "0";
 
   const { data: course, isLoading: courseLoading } = useQuery<Course>({
     queryKey: [`/api/courses/${id}`],
+    queryFn: async () => {
+      const docRef = doc(db, "courses", id);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) throw new Error("Course not found");
+      return { ...docSnap.data(), id: docSnap.id as any } as Course;
+    }
   });
 
   const { data: notes, isLoading: notesLoading, error: notesError } = useQuery<Note[]>({
     queryKey: [`/api/courses/${id}/notes`],
     retry: false,
+    queryFn: async () => {
+      const q = query(
+        collection(db, "notes"),
+        where("courseId", "==", id),
+        orderBy("createdAt", "desc")
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id as any
+      } as Note));
+    }
   });
 
   if (courseLoading || notesLoading) {

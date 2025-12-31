@@ -1,0 +1,78 @@
+To keep this as minimal as possible, we should focus on a **"Feeds-based"** architecture. Think of it like a simplified version of Patreon or OnlyFans, but strictly for academic course updates.
+
+Here is the blueprint for a **Minimal Viable Product (MVP)**.
+
+---
+
+### 1. The Three-Screen Architecture
+
+You only need three main views to solve this problem effectively.
+
+#### **A. The Course Discovery (Home)**
+
+* **Search Bar:** Search by Course Code (e.g., MATH 1110).
+* **Course Cards:** Showing the course name, the "Official Note-Taker" rating, and the monthly subscription price ($5–$10).
+* **Status Badge:** A green "Live" dot if a lecture is currently happening.
+
+#### **B. The Course Feed (The "Premium" View)**
+
+Once you pay, you unlock this feed. It looks like a clean timeline:
+
+* **Top Section:** "Next Assignment Due: Friday 14th" (Pinned by the Note-Taker).
+* **The Timeline:** * *Entry 1:* [PDF Icon] Lecture Notes - Set Theory (March 5).
+* *Entry 2:* [Audio Icon] 30-second explanation of the "Limit" concept.
+* *Entry 3:* [Text] "Lecturer says the tutorial on Monday is cancelled."
+
+
+
+#### **C. The Upload Dashboard (For the Note-Taker)**
+
+A simple "Plus" (+) button for the student to:
+
+* Upload PDF (Scan).
+* Post a "Quick Update" (Text).
+* Post an "Urgent Alert" (Triggers a notification for subscribers).
+
+---
+
+### 2. The Functional Flow (How it works)
+
+1. **Validation:** The Note-Taker uploads a photo of their UNZA ID and their MATH 1110 registration.
+2. **Subscription:** You hit "Subscribe," pay via Mobile Money (Airtel/MTN) or Card.
+3. **Delivery:** The moment the student finishes the lecture and hits "Upload," you get a push notification: *"MATH 1110: Today's notes are ready."*
+4. **Rating:** At the end of the week, you give a 1–5 star rating. If the rating drops too low, the Note-Taker is replaced.
+
+---
+
+### 3. Minimal Tech Stack (How to build it fast)
+
+Since you are a student, don't build this from scratch with code. Use **No-Code tools**:
+
+* **Frontend:** [Glide Apps](https://www.glideapps.com/). It allows you to turn a Google Sheet into a professional-looking app in hours.
+* **Database:** **Google Sheets**. Each row is a new lecture update.
+* **Payments:** **Flutterwave** or **Paystack**. Both work in Zambia and handle Mobile Money, which is essential for UNZA students.
+* **Storage:** **Cloudinary** or **Google Drive API** (to host the PDF notes).
+
+---
+
+### 4. The "Anti-Ghosting" Feature (Crucial)
+
+The biggest risk is the 1st-year student getting lazy. The app should have a **"Proof of Presence"** timer:
+
+* The Note-Taker must "Check-in" via GPS at the UNZA Lecture Theatre during the scheduled class time.
+* If they don't check in, the app sends them a warning. If they don't upload by 6:00 PM, their payout for that day is docked.
+
+---
+
+### 5. Monetization Logic
+
+* **User pays:** $10.00
+* **Platform fee (You):** $2.00 (to cover hosting/maintenance).
+* **Note-Taker earns:** $8.00
+* *Scale:* If 10 people subscribe to that one student, the student earns **$80/month** (approx. K2,000)—which is huge for a 1st year—and you earn **$20/month** passive income.
+
+---
+
+### Next Step
+
+Since you’re in your final year and likely busy, would you like me to **outline the specific "Data Columns" you would need in a Google Sheet** to start building this in Glide Apps right now?

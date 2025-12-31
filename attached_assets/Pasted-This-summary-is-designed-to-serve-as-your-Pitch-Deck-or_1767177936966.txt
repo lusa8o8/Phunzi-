@@ -1,0 +1,41 @@
+This summary is designed to serve as your "Pitch Deck" or "Executive Summary." You can use this to explain the concept to potential developers, partners, or even the university's innovation hub.
+
+---
+
+### **Project Summary: ClassSync (The "Service-Course" Lifeline)**
+
+#### **The Problem: The "Final-Year Bottleneck"**
+
+At the University of Zambia (UNZA), final-year students often face "course overload," requiring them to repeat foundational courses while managing senior-level credits. **MATH 1110** (School of Humanities) represents a specific crisis:
+
+* **Physical Barriers:** Massive enrollment leads to overcrowded lecture halls, making physical attendance difficult and unproductive.
+* **Scheduling Conflicts:** Final-year timetables often clash with 1st-year service courses.
+* **Content Complexity:** MATH 1110 is notoriously difficult, requiring consistent updates and expert-level note-taking that standard "group chats" fail to provide.
+* **Information Gap:** Currently, there is no formal, paid marketplace that connects "time-poor" seniors with "high-performing" juniors.
+
+#### **The Solution: A Micro-Subscription Marketplace**
+
+**ClassSync** is a minimal, mobile-first platform that allows busy students to "outsource" their classroom presence to verified, high-performing students already in the room. It transforms note-taking from a casual favor into a professional, paid service.
+
+#### **Core Value Proposition**
+
+* **For the Subscriber (Final Year):** For a small monthly fee ($5–$10), they receive a guaranteed stream of high-quality PDFs, audio summaries, and administrative alerts (quizzes/deadlines) without needing to fight for a seat in a packed hall.
+* **For the Provider (1st Year):** They monetize their existing academic diligence. By simply uploading the notes they are already taking, they earn a steady monthly income (via Mobile Money).
+
+#### **How the App Works (The MVP)**
+
+1. **Verified Sourcing:** Note-takers must upload proof of registration and maintain a high user rating to stay on the platform.
+2. **The "Live Feed":** Instead of messy chat threads, users see a structured "Lecture Timeline" where each entry is a dated PDF scan or a voice note.
+3. **Proof of Delivery:** The app uses timestamped uploads and "check-ins" to ensure the note-taker was actually present, protecting the subscriber's investment.
+4. **Integrated Payments:** Built-in support for Airtel and MTN Mobile Money ensures the transaction is seamless and secure.
+
+#### **The Impact**
+
+ClassSync doesn't just share notes; it provides **academic insurance**. It ensures that a student’s graduation isn't delayed by a 1st-year repeat course, while simultaneously providing financial support to hardworking junior students.
+
+---
+
+### **What would you like to do next?**
+
+* **I can help you design the "User Interface" (what the screens look like).**
+* **I can draft a simple "Launch Plan" for how to get your first 10 paying users at UNZA.**

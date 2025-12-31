@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, ArrowLeft, FileText, Headphones, Calendar, Download } from "lucide-react";
 import { format } from "date-fns";
+import { motion } from "framer-motion";
 
 export default function CourseFeed() {
   const [match, params] = useRoute("/course/:id");
@@ -42,12 +43,18 @@ export default function CourseFeed() {
 
       <main className="container mx-auto px-4 py-6 max-w-3xl">
         <div className="relative border-l-2 border-indigo-200 ml-4 space-y-8 pl-8 py-4">
-          {notes && notes.length > 0 ? notes.map((note) => (
-            <div key={note.id} className="relative">
+          {notes && notes.length > 0 ? notes.map((note, index) => (
+            <motion.div
+              key={note.id}
+              className="relative"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
               {/* Timeline Dot */}
               <div className={`absolute -left-[41px] top-4 h-5 w-5 rounded-full border-4 border-white ${note.type === 'pdf' ? 'bg-red-500' : 'bg-blue-500'} shadow-sm`} />
 
-              <Card className="hover:shadow-md transition-shadow">
+              <Card className="hover:shadow-md transition-all hover:border-indigo-200">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex gap-3">
@@ -64,11 +71,11 @@ export default function CourseFeed() {
                           <Calendar className="h-3 w-3" />
                           {note.createdAt ? format(new Date(note.createdAt), "MMM d, yyyy") : 'Unknown Date'}
                           <span className="text-gray-300">•</span>
-                          <span className="uppercase">{note.type}</span>
+                          <span className="uppercase font-bold tracking-wider">{note.type}</span>
                         </div>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" asChild>
+                    <Button variant="outline" size="sm" asChild className="hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200">
                       <a href={note.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
                         <Download className="h-4 w-4" />
                         <span className="hidden sm:inline">Download</span>
@@ -77,7 +84,7 @@ export default function CourseFeed() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            </motion.div>
           )) : (
             <div className="text-center text-gray-500 py-10">
               No notes uploaded yet for this course.

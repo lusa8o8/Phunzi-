@@ -4,11 +4,12 @@ import { Course, Subscription } from "@shared/schema";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, BookOpen, Clock, AlertCircle, Search, LogOut } from "lucide-react";
+import { Loader2, BookOpen, Clock, AlertCircle, Search, LogOut, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Dashboard() {
     const { user, logoutMutation } = useAuth();
@@ -82,26 +83,36 @@ export default function Dashboard() {
                     </h2>
                     {subscriptions && subscriptions.length > 0 ? (
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {subscriptions.map(sub => {
+                            {subscriptions.map((sub, index) => {
                                 const course = courses?.find(c => c.id === sub.courseId);
                                 if (!course) return null;
                                 return (
-                                    <Link href={`/course/${course.id}`} key={sub.id}>
-                                        <div className="cursor-pointer group">
-                                            <Card className="border-green-100 bg-green-50/50 hover:bg-green-50 transition-colors">
-                                                <CardHeader>
-                                                    <CardTitle className="text-green-800">{course.code}</CardTitle>
-                                                    <CardDescription>{course.name}</CardDescription>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    <div className="text-sm text-green-600 font-medium">Access Granted</div>
-                                                </CardContent>
-                                                <CardFooter>
-                                                    <Button className="w-full bg-green-600 hover:bg-green-700">View Notes</Button>
-                                                </CardFooter>
-                                            </Card>
-                                        </div>
-                                    </Link>
+                                    <motion.div
+                                        key={sub.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.1 }}
+                                    >
+                                        <Link href={`/course/${course.id}`}>
+                                            <div className="cursor-pointer group h-full">
+                                                <Card className="h-full border-green-100 bg-green-50/50 hover:bg-green-50 transition-all hover:shadow-md hover:-translate-y-1">
+                                                    <CardHeader>
+                                                        <CardTitle className="text-green-800 flex items-center justify-between">
+                                                            {course.code}
+                                                            <Sparkles className="h-4 w-4 text-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                        </CardTitle>
+                                                        <CardDescription>{course.name}</CardDescription>
+                                                    </CardHeader>
+                                                    <CardContent>
+                                                        <div className="text-sm text-green-600 font-medium">Access Granted</div>
+                                                    </CardContent>
+                                                    <CardFooter>
+                                                        <Button className="w-full bg-green-600 hover:bg-green-700 shadow-sm">View Notes</Button>
+                                                    </CardFooter>
+                                                </Card>
+                                            </div>
+                                        </Link>
+                                    </motion.div>
                                 );
                             })}
                         </div>
@@ -131,43 +142,53 @@ export default function Dashboard() {
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredCourses?.map(course => {
-                            const isSubscribed = subscribedCourseIds.has(course.id);
-                            if (isSubscribed) return null; // Already shown above
+                        <AnimatePresence mode="popLayout">
+                            {filteredCourses?.map((course, index) => {
+                                const isSubscribed = subscribedCourseIds.has(course.id);
+                                if (isSubscribed) return null; // Already shown above
 
-                            return (
-                                <Card key={course.id} className="hover:shadow-md transition-shadow">
-                                    <CardHeader>
-                                        <div className="flex justify-between items-start">
-                                            <CardTitle className="text-indigo-900">{course.code}</CardTitle>
-                                            <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-bold">
-                                                K{course.price} / mo
-                                            </span>
-                                        </div>
-                                        <CardDescription className="line-clamp-2">{course.name}</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-sm text-gray-600 text-ellipsis overflow-hidden h-10">
-                                            {course.description}
-                                        </p>
-                                    </CardContent>
-                                    <CardFooter>
-                                        <Button
-                                            className="w-full"
-                                            variant="outline"
-                                            onClick={() => {
-                                                if (confirm(`Subscribe to ${course.code} for K${course.price}? (Mock Payment)`)) {
-                                                    subscribeMutation.mutate(course.id);
-                                                }
-                                            }}
-                                            disabled={subscribeMutation.isPending}
-                                        >
-                                            {subscribeMutation.isPending ? "Procesing..." : "Subscribe Now"}
-                                        </Button>
-                                    </CardFooter>
-                                </Card>
-                            );
-                        })}
+                                return (
+                                    <motion.div
+                                        key={course.id}
+                                        layout
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        <Card className="h-full hover:shadow-lg transition-all border-indigo-50 hover:border-indigo-100">
+                                            <CardHeader>
+                                                <div className="flex justify-between items-start">
+                                                    <CardTitle className="text-indigo-900">{course.code}</CardTitle>
+                                                    <span className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+                                                        K{course.price}
+                                                    </span>
+                                                </div>
+                                                <CardDescription className="line-clamp-2">{course.name}</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <p className="text-sm text-gray-600 line-clamp-2">
+                                                    {course.description}
+                                                </p>
+                                            </CardContent>
+                                            <CardFooter>
+                                                <Button
+                                                    className="w-full shadow-sm bg-indigo-600 hover:bg-indigo-700"
+                                                    onClick={() => {
+                                                        if (confirm(`Subscribe to ${course.code} for K${course.price}? (Mock Payment)`)) {
+                                                            subscribeMutation.mutate(course.id);
+                                                        }
+                                                    }}
+                                                    disabled={subscribeMutation.isPending}
+                                                >
+                                                    {subscribeMutation.isPending ? "Processing..." : "Subscribe Now"}
+                                                </Button>
+                                            </CardFooter>
+                                        </Card>
+                                    </motion.div>
+                                );
+                            })}
+                        </AnimatePresence>
                     </div>
 
                     {filteredCourses?.length === 0 && (

@@ -10,11 +10,17 @@ import { useState } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { CreditCard, Smartphone } from "lucide-react";
 
 export default function Dashboard() {
     const { user, logoutMutation } = useAuth();
     const [searchTerm, setSearchTerm] = useState("");
     const { toast } = useToast();
+    const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+    const [paymentProvider, setPaymentProvider] = useState("airtel");
 
     const { data: courses, isLoading: coursesLoading } = useQuery<Course[]>({
         queryKey: ["/api/courses"],
@@ -31,6 +37,7 @@ export default function Dashboard() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+            setSelectedCourse(null);
             toast({
                 title: "Subscribed Successfully",
                 description: "Payment confirmed (Mock). You now have access.",
@@ -193,14 +200,10 @@ export default function Dashboard() {
                                             <CardFooter>
                                                 <Button
                                                     className="w-full shadow-sm bg-indigo-600 hover:bg-indigo-700"
-                                                    onClick={() => {
-                                                        if (confirm(`Subscribe to ${course.code} for K${course.price}? (Mock Payment)`)) {
-                                                            subscribeMutation.mutate(course.id);
-                                                        }
-                                                    }}
+                                                    onClick={() => setSelectedCourse(course)}
                                                     disabled={subscribeMutation.isPending}
                                                 >
-                                                    {subscribeMutation.isPending ? "Processing..." : "Subscribe Now"}
+                                                    Subscribe Now
                                                 </Button>
                                             </CardFooter>
                                         </Card>
@@ -217,6 +220,90 @@ export default function Dashboard() {
                     )}
                 </div>
             </main>
+
+            <Dialog open={!!selectedCourse} onOpenChange={(open) => !open && setSelectedCourse(null)}>
+                <DialogContent className="sm:max-w-md bg-white rounded-2xl overflow-hidden p-0 border-none shadow-2xl">
+                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
+                        <DialogHeader>
+                            <DialogTitle className="text-white text-2xl flex items-center gap-2">
+                                <CreditCard className="h-6 w-6" />
+                                Secure Checkout
+                            </DialogTitle>
+                            <DialogDescription className="text-indigo-100">
+                                Complete your subscription to {selectedCourse?.code}
+                            </DialogDescription>
+                        </DialogHeader>
+                    </div>
+
+                    <div className="p-6 space-y-6">
+                        <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                            <div>
+                                <p className="text-sm text-indigo-600 font-semibold">Price</p>
+                                <p className="text-2xl font-bold text-indigo-900">K{selectedCourse?.price}.00</p>
+                            </div>
+                            <div className="text-right text-xs text-indigo-400 capitalize bg-white px-3 py-1 rounded-full shadow-sm border border-indigo-100">
+                                One-time Payment
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <Label className="text-gray-700 font-bold">Select Payment Provider</Label>
+                            <RadioGroup
+                                value={paymentProvider}
+                                onValueChange={setPaymentProvider}
+                                className="grid grid-cols-2 gap-4"
+                            >
+                                <div>
+                                    <RadioGroupItem value="airtel" id="airtel" className="peer sr-only" />
+                                    <Label
+                                        htmlFor="airtel"
+                                        className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-white p-4 hover:bg-gray-50 peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:bg-indigo-50/50 cursor-pointer transition-all"
+                                    >
+                                        <div className="h-8 w-8 bg-red-600 rounded-full flex items-center justify-center text-[10px] text-white font-bold mb-2">airtel</div>
+                                        <span className="text-sm font-semibold">Airtel Money</span>
+                                    </Label>
+                                </div>
+                                <div>
+                                    <RadioGroupItem value="mtn" id="mtn" className="peer sr-only" />
+                                    <Label
+                                        htmlFor="mtn"
+                                        className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-white p-4 hover:bg-gray-50 peer-data-[state=checked]:border-yellow-600 peer-data-[state=checked]:bg-yellow-50/50 cursor-pointer transition-all"
+                                    >
+                                        <div className="h-8 w-8 bg-yellow-400 rounded-full flex items-center justify-center text-[10px] text-black font-bold mb-2">MTN</div>
+                                        <span className="text-sm font-semibold">MTN MoMo</span>
+                                    </Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-gray-700 font-bold">Phone Number</Label>
+                            <div className="relative">
+                                <Smartphone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                <Input disabled value={user?.phoneNumber || ""} className="pl-9 bg-gray-50 border-gray-200" />
+                            </div>
+                            <p className="text-[10px] text-gray-400 italic text-center uppercase tracking-widest pt-2">Powered by PhunziPay Gateway</p>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="p-6 bg-gray-50">
+                        <Button
+                            className="w-full py-6 rounded-xl text-lg font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            onClick={() => selectedCourse && subscribeMutation.mutate(selectedCourse.id)}
+                            disabled={subscribeMutation.isPending}
+                        >
+                            {subscribeMutation.isPending ? (
+                                <>
+                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                    Processing...
+                                </>
+                            ) : (
+                                `Confirm Payment (K${selectedCourse?.price}.00)`
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

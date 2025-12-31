@@ -3,7 +3,7 @@ import { Link, useRoute } from "wouter";
 import { Course, Note } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, ArrowLeft, FileText, Headphones, Calendar, Download } from "lucide-react";
+import { Loader2, ArrowLeft, FileText, Headphones, Calendar, Download, AlertCircle, ShoppingCart } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 
@@ -15,12 +15,35 @@ export default function CourseFeed() {
     queryKey: [`/api/courses/${id}`],
   });
 
-  const { data: notes, isLoading: notesLoading } = useQuery<Note[]>({
+  const { data: notes, isLoading: notesLoading, error: notesError } = useQuery<Note[]>({
     queryKey: [`/api/courses/${id}/notes`],
+    retry: false,
   });
 
   if (courseLoading || notesLoading) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-indigo-600" /></div>;
+  }
+
+  if (notesError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50">
+        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-sm border border-red-100">
+          <div className="h-16 w-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="h-8 w-8 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Not Subscribed</h2>
+          <p className="text-gray-500 mb-8">
+            You need an active subscription to {course?.code} to access these notes.
+          </p>
+          <Link href="/">
+            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 py-6 rounded-xl shadow-lg shadow-indigo-100">
+              <ShoppingCart className="mr-2 h-5 w-5" />
+              Go to Marketplace
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   if (!course) return <div>Course not found</div>;

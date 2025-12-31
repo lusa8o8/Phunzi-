@@ -120,14 +120,30 @@ export default function Dashboard() {
                             })}
                         </div>
                     ) : (
-                        <div className="text-center p-8 bg-white rounded-lg border border-dashed text-gray-500">
-                            You haven't subscribed to any courses yet.
-                        </div>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="text-center p-12 bg-white rounded-2xl border-2 border-dashed border-indigo-100 flex flex-col items-center shadow-sm"
+                        >
+                            <div className="h-16 w-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
+                                <Search className="h-8 w-8 text-indigo-400" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Start Your Learning Journey</h3>
+                            <p className="text-gray-500 max-w-sm mx-auto mb-8">
+                                You don't have any active subscriptions yet. Explore the marketplace below to find high-quality notes for your courses.
+                            </p>
+                            <Button
+                                className="bg-indigo-600 hover:bg-indigo-700 px-8 py-6 rounded-xl text-lg shadow-lg shadow-indigo-200 transition-all hover:scale-105 active:scale-95"
+                                onClick={() => document.getElementById('marketplace-section')?.scrollIntoView({ behavior: 'smooth' })}
+                            >
+                                Browse Marketplace
+                            </Button>
+                        </motion.div>
                     )}
                 </div>
 
                 {/* Marketplace Section */}
-                <div className="space-y-6">
+                <div id="marketplace-section" className="space-y-6 pt-4 scroll-mt-20">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="space-y-1">
                             <h2 className="text-2xl font-bold text-gray-900">Course Marketplace</h2>

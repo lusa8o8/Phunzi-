@@ -1,117 +1,90 @@
-import { useParams } from "wouter";
-import Layout from "@/components/layout";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useRoute } from "wouter";
+import { Course, Note } from "@shared/schema";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { COURSES, FEED_ENTRIES } from "@/lib/mockData";
-import { ArrowLeft, Download, FileText, Mic, AlertCircle, Clock, CheckCircle2 } from "lucide-react";
-import { Link } from "wouter";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, ArrowLeft, FileText, Headphones, Calendar, Download } from "lucide-react";
+import { format } from "date-fns";
 
 export default function CourseFeed() {
-  const { id } = useParams();
-  const course = COURSES.find(c => c.id === id) || COURSES[0]; // Fallback for demo
-  const entries = FEED_ENTRIES;
+  const [match, params] = useRoute("/course/:id");
+  const id = parseInt(params?.id || "0");
+
+  const { data: course, isLoading: courseLoading } = useQuery<Course>({
+    queryKey: [`/api/courses/${id}`],
+  });
+
+  const { data: notes, isLoading: notesLoading } = useQuery<Note[]>({
+    queryKey: [`/api/courses/${id}/notes`],
+  });
+
+  if (courseLoading || notesLoading) {
+    return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-indigo-600" /></div>;
+  }
+
+  if (!course) return <div>Course not found</div>;
 
   return (
-    <Layout>
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b">
-        <div className="p-4">
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <header className="bg-white border-b sticky top-0 z-10 shadow-sm">
+        <div className="container mx-auto px-4 h-16 flex items-center gap-4">
           <Link href="/">
-            <div className="flex items-center gap-2 text-muted-foreground mb-4 text-sm">
-              <ArrowLeft className="h-4 w-4" /> Back to Courses
-            </div>
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
           </Link>
-          
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl font-bold font-serif text-primary">{course.code}</h1>
-              <p className="text-sm text-muted-foreground">{course.title}</p>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-muted-foreground uppercase tracking-wider">Taught by</div>
-              <div className="font-medium text-sm">{course.noteTaker.name}</div>
-              <div className="flex items-center justify-end gap-1 text-xs text-accent-foreground mt-0.5">
-                <CheckCircle2 className="h-3 w-3 text-primary" /> Verified
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Pinned Alert */}
-      <div className="p-4 pb-0">
-        <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 flex gap-3 items-start">
-          <AlertCircle className="h-5 w-5 text-accent shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-semibold text-sm text-accent-foreground">Next Assessment</h4>
-            <p className="text-xs text-muted-foreground mt-1">Mid-term test coming up on Friday, 14th June. Covers Set Theory to Calculus I.</p>
+            <h1 className="text-lg font-bold text-gray-900">{course.code}</h1>
+            <p className="text-xs text-gray-500">{course.name}</p>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Timeline Feed */}
-      <div className="p-4 relative">
-        <div className="absolute left-8 top-4 bottom-4 w-px bg-border" /> {/* Timeline Line */}
-        
-        <div className="space-y-6 relative">
-          {entries.map((entry) => (
-            <div key={entry.id} className="pl-10 relative">
-              
+      <main className="container mx-auto px-4 py-6 max-w-3xl">
+        <div className="relative border-l-2 border-indigo-200 ml-4 space-y-8 pl-8 py-4">
+          {notes && notes.length > 0 ? notes.map((note) => (
+            <div key={note.id} className="relative">
               {/* Timeline Dot */}
-              <div className="absolute left-[11px] top-3 h-3 w-3 rounded-full border-2 border-background z-10 
-                data-[type=alert]:bg-destructive data-[type=pdf]:bg-primary data-[type=audio]:bg-accent data-[type=text]:bg-muted-foreground"
-                data-type={entry.type}
-              />
+              <div className={`absolute -left-[41px] top-4 h-5 w-5 rounded-full border-4 border-white ${note.type === 'pdf' ? 'bg-red-500' : 'bg-blue-500'} shadow-sm`} />
 
-              <div className="bg-card rounded-xl border shadow-sm p-4 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-2">
-                    {entry.type === 'pdf' && <FileText className="h-4 w-4 text-primary" />}
-                    {entry.type === 'audio' && <Mic className="h-4 w-4 text-accent-foreground" />}
-                    {entry.type === 'alert' && <AlertCircle className="h-4 w-4 text-destructive" />}
-                    {entry.type === 'text' && <FileText className="h-4 w-4 text-muted-foreground" />}
-                    
-                    <span className="text-xs font-medium text-muted-foreground">{entry.timestamp}</span>
-                  </div>
-                  
-                  {/* Type Badge */}
-                  <Badge variant="secondary" className="text-[10px] h-5">
-                    {entry.type.toUpperCase()}
-                  </Badge>
-                </div>
-
-                <h3 className="font-semibold text-foreground mb-2">{entry.title}</h3>
-
-                {entry.content && (
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {entry.content}
-                  </p>
-                )}
-
-                {/* Actions */}
-                {entry.type === 'pdf' && (
-                  <Button variant="outline" size="sm" className="w-full mt-2 gap-2 text-primary border-primary/20 hover:bg-primary/5">
-                    <Download className="h-4 w-4" /> Download PDF ({entry.fileSize})
-                  </Button>
-                )}
-
-                {entry.type === 'audio' && (
-                  <div className="mt-3 bg-secondary/50 rounded-full p-2 flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white shrink-0">
-                      <Mic className="h-4 w-4" />
+              <Card className="hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex gap-3">
+                      <div className={`p-3 rounded-lg ${note.type === 'pdf' ? 'bg-red-50' : 'bg-blue-50'}`}>
+                        {note.type === 'pdf' ? (
+                          <FileText className="h-6 w-6 text-red-600" />
+                        ) : (
+                          <Headphones className="h-6 w-6 text-blue-600" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{note.title}</h3>
+                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                          <Calendar className="h-3 w-3" />
+                          {note.createdAt ? format(new Date(note.createdAt), "MMM d, yyyy") : 'Unknown Date'}
+                          <span className="text-gray-300">•</span>
+                          <span className="uppercase">{note.type}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="h-1 flex-1 bg-muted-foreground/20 rounded-full overflow-hidden">
-                      <div className="h-full w-1/3 bg-primary rounded-full" />
-                    </div>
-                    <span className="text-xs font-mono text-muted-foreground">{entry.duration}</span>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={note.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                        <Download className="h-4 w-4" />
+                        <span className="hidden sm:inline">Download</span>
+                      </a>
+                    </Button>
                   </div>
-                )}
-              </div>
+                </CardContent>
+              </Card>
             </div>
-          ))}
+          )) : (
+            <div className="text-center text-gray-500 py-10">
+              No notes uploaded yet for this course.
+            </div>
+          )}
         </div>
-      </div>
-    </Layout>
+      </main>
+    </div>
   );
 }

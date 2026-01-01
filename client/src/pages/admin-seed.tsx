@@ -12,17 +12,19 @@ export default function AdminSeed() {
         setLoading(true);
         setStatus("Seeding data...");
         try {
-            // Seed Courses
-            const courseRef = await addDoc(collection(db, "courses"), {
+            // Seed Course: MATH 1110 (using fixed ID for predictable reference)
+            const mathId = "MATH1110";
+            await setDoc(doc(db, "courses", mathId), {
                 code: "MATH 1110",
                 name: "Introduction to Calculus",
                 description: "Comprehensive notes for first-year calculus, including limits, derivatives, and integrals.",
                 price: 15,
                 providerId: "virt_prov_1"
             });
-            const courseId = courseRef.id;
 
-            await addDoc(collection(db, "courses"), {
+            // Seed Course: PHYS 1210
+            const physId = "PHYS1210";
+            await setDoc(doc(db, "courses", physId), {
                 code: "PHYS 1210",
                 name: "Mechanics & Relativity",
                 description: "Deep dive into Newtonian mechanics and special relativity concepts.",
@@ -32,35 +34,24 @@ export default function AdminSeed() {
 
             // Seed Notes for MATH 1110
             const notes = [
-                {
-                    title: "Lecture 1: Limits & Continuity",
-                    type: "pdf",
-                    url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
-                    courseId: courseId,
-                    createdAt: new Date().toISOString()
-                },
-                {
-                    title: "Audio Summary: The Chain Rule",
-                    type: "audio",
-                    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-                    courseId: courseId,
-                    createdAt: new Date().toISOString()
-                },
-                {
-                    title: "Lecture 2: Derivatives of Trig Functions",
-                    type: "pdf",
-                    url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
-                    courseId: courseId,
-                    createdAt: new Date().toISOString()
-                }
+                { id: "math1110_l1", title: "Lecture 1: Limits & Continuity", type: "pdf", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
+                { id: "math1110_a1", title: "Audio Summary: The Chain Rule", type: "audio", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+                { id: "math1110_l2", title: "Lecture 2: Derivatives of Trig Functions", type: "pdf", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
             ];
 
             for (const note of notes) {
-                await addDoc(collection(db, "notes"), note);
+                await setDoc(doc(db, "notes", note.id), {
+                    title: note.title,
+                    type: note.type,
+                    url: note.url,
+                    courseId: mathId,
+                    createdAt: new Date().toISOString()
+                });
             }
 
             setStatus("Success! Firestore seeded with MATH 1110 and PHYS 1210.");
         } catch (error: any) {
+            console.error(error);
             setStatus("Error: " + error.message);
         }
         setLoading(false);

@@ -15,8 +15,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { CreditCard, Smartphone } from "lucide-react";
 
-import { db } from "@/lib/firebase";
+import { db, FLW_PUBLIC_KEY } from "@/lib/firebase";
 import { collection, getDocs, addDoc, query, where, Timestamp } from "firebase/firestore";
+import { useFlutterwave, closePaymentModal } from "flutterwave-react-v3";
 
 export default function Dashboard() {
     const { user, logoutMutation } = useAuth();
@@ -24,50 +25,47 @@ export default function Dashboard() {
     const { toast } = useToast();
     const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
     const [paymentProvider, setPaymentProvider] = useState("airtel");
+    const [phoneNumber, setPhoneNumber] = useState("");
 
     const { data: courses, isLoading: coursesLoading } = useQuery<Course[]>({
         queryKey: ["/api/courses"],
-        queryFn: async () => {
-            const querySnapshot = await getDocs(collection(db, "courses"));
-            return querySnapshot.docs.map(doc => ({
-                ...doc.data(),
-                id: doc.id as any
-            } as Course));
-        }
     });
 
     const { data: subscriptions, isLoading: subsLoading } = useQuery<Subscription[]>({
-        queryKey: ["/api/subscriptions", user?.id],
+        queryKey: ["/api/subscriptions"],
         enabled: !!user,
-        queryFn: async () => {
-            if (!user) return [];
-            const q = query(collection(db, "subscriptions"), where("userId", "==", user.id));
-            const querySnapshot = await getDocs(q);
-            return querySnapshot.docs.map(doc => ({
-                ...doc.data(),
-                id: doc.id as any
-            } as Subscription));
-        }
     });
+
+    const fwConfig = {
+        public_key: FLW_PUBLIC_KEY,
+        tx_ref: `${user?.id}_${selectedCourse?.id}_${Date.now()}`,
+        amount: selectedCourse?.price || 0,
+        currency: "ZMW",
+        payment_options: "mobilemoneyzambia",
+        customer: {
+            email: user?.username || "student@phunzi.plus",
+            phone_number: user?.phoneNumber || "",
+            name: user?.name || "Student",
+        },
+        customizations: {
+            title: "Phunzi+ Subscription",
+            description: `Subscription for ${selectedCourse?.code}`,
+            logo: "https://st2.depositphotos.com/4403291/7418/v/450/depositphotos_74189661-stock-illustration-online-education-virtual-learning-graphic.jpg",
+        },
+    };
+
+    const handleFlutterwavePayment = useFlutterwave(fwConfig);
 
     const subscribeMutation = useMutation({
         mutationFn: async (courseId: number) => {
-            if (!user) throw new Error("Not authenticated");
-            const subData = {
-                userId: user.id,
-                courseId: courseId,
-                active: true,
-                startDate: Timestamp.now()
-            };
-            const docRef = await addDoc(collection(db, "subscriptions"), subData);
-            return { id: docRef.id, ...subData };
+            await apiRequest("POST", `/api/courses/${courseId}/subscribe`);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["/api/subscriptions", user?.id] });
             setSelectedCourse(null);
             toast({
                 title: "Subscribed Successfully",
-                description: "Payment confirmed (Mock). You now have access.",
+                description: "Payment confirmed. You now have access.",
             });
         },
         onError: (err: any) => {
@@ -91,20 +89,22 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="min-h-screen bg-[#0a0c10] pb-20">
             {/* Header */}
-            <header className="bg-white border-b sticky top-0 z-10">
-                <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <BookOpen className="h-6 w-6 text-indigo-600" />
-                        <span className="font-bold text-xl text-indigo-900">Phunzi+</span>
+            <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-10 shadow-lg">
+                <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 bg-indigo-500/20 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.2)]">
+                            <BookOpen className="h-6 w-6 text-indigo-400" />
+                        </div>
+                        <span className="font-black text-2xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">Phunzi+</span>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="text-right hidden md:block">
-                            <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
-                            <p className="text-xs text-gray-500">{user?.university} • {user?.school}</p>
+                            <p className="text-sm font-bold text-white">{user?.name}</p>
+                            <p className="text-xs text-indigo-300/60">{user?.university} • {user?.school}</p>
                         </div>
-                        <Button variant="ghost" size="sm" onClick={() => logoutMutation.mutate()}>
+                        <Button variant="ghost" size="sm" onClick={() => logoutMutation.mutate()} className="hover:bg-white/10 text-indigo-300 hover:text-white transition-colors">
                             <LogOut className="h-4 w-4" />
                         </Button>
                     </div>
@@ -132,19 +132,21 @@ export default function Dashboard() {
                                     >
                                         <Link href={`/course/${course.id}`}>
                                             <div className="cursor-pointer group h-full">
-                                                <Card className="h-full border-green-100 bg-green-50/50 hover:bg-green-50 transition-all hover:shadow-md hover:-translate-y-1">
+                                                <Card className="h-full border-green-500/20 bg-green-500/5 backdrop-blur-md hover:bg-green-500/10 transition-all hover:shadow-[0_0_20px_rgba(34,197,94,0.15)] hover:-translate-y-1 overflow-hidden group">
+                                                    <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-100 transition-opacity">
+                                                        <Sparkles className="h-5 w-5 text-green-400" />
+                                                    </div>
                                                     <CardHeader>
-                                                        <CardTitle className="text-green-800 flex items-center justify-between">
+                                                        <CardTitle className="text-green-400 flex items-center justify-between">
                                                             {course.code}
-                                                            <Sparkles className="h-4 w-4 text-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                         </CardTitle>
-                                                        <CardDescription>{course.name}</CardDescription>
+                                                        <CardDescription className="text-green-100/60">{course.name}</CardDescription>
                                                     </CardHeader>
                                                     <CardContent>
-                                                        <div className="text-sm text-green-600 font-medium">Access Granted</div>
+                                                        <div className="text-xs font-bold text-green-400/80 uppercase tracking-widest px-2 py-1 rounded bg-green-500/10 w-fit">Full Access</div>
                                                     </CardContent>
                                                     <CardFooter>
-                                                        <Button className="w-full bg-green-600 hover:bg-green-700 shadow-sm">View Notes</Button>
+                                                        <Button className="w-full bg-green-600 hover:bg-green-700 shadow-lg shadow-green-900/20 border-0">View Notes</Button>
                                                     </CardFooter>
                                                 </Card>
                                             </div>
@@ -157,17 +159,17 @@ export default function Dashboard() {
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="text-center p-12 bg-white rounded-2xl border-2 border-dashed border-indigo-100 flex flex-col items-center shadow-sm"
+                            className="text-center p-12 bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-dashed border-white/10 flex flex-col items-center shadow-2xl"
                         >
-                            <div className="h-16 w-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
-                                <Search className="h-8 w-8 text-indigo-400" />
+                            <div className="h-20 w-20 bg-indigo-500/20 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(99,102,241,0.2)]">
+                                <Search className="h-10 w-10 text-indigo-400" />
                             </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">Start Your Learning Journey</h3>
-                            <p className="text-gray-500 max-w-sm mx-auto mb-8">
+                            <h3 className="text-2xl font-bold text-white mb-3">Start Your Learning Journey</h3>
+                            <p className="text-indigo-100/60 max-w-sm mx-auto mb-8 leading-relaxed">
                                 You don't have any active subscriptions yet. Explore the marketplace below to find high-quality notes for your courses.
                             </p>
                             <Button
-                                className="bg-indigo-600 hover:bg-indigo-700 px-8 py-6 rounded-xl text-lg shadow-lg shadow-indigo-200 transition-all hover:scale-105 active:scale-95"
+                                className="bg-indigo-600 hover:bg-indigo-500 px-8 py-7 rounded-2xl text-lg font-bold shadow-xl shadow-indigo-900/30 transition-all hover:scale-105 active:scale-95 border-0"
                                 onClick={() => document.getElementById('marketplace-section')?.scrollIntoView({ behavior: 'smooth' })}
                             >
                                 Browse Marketplace
@@ -180,14 +182,14 @@ export default function Dashboard() {
                 <div id="marketplace-section" className="space-y-6 pt-4 scroll-mt-20">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="space-y-1">
-                            <h2 className="text-2xl font-bold text-gray-900">Course Marketplace</h2>
-                            <p className="text-gray-500">Find reliable notes for courses you're missing.</p>
+                            <h2 className="text-2xl font-bold text-white">Course Marketplace</h2>
+                            <p className="text-indigo-200/60">Find reliable notes for courses you're missing.</p>
                         </div>
                         <div className="relative w-full md:w-72">
-                            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <Search className="absolute left-3 top-3 h-4 w-4 text-indigo-300/50" />
                             <Input
                                 placeholder="Search code (e.g. MATH 1110)"
-                                className="pl-9"
+                                className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-indigo-300/40 focus:border-indigo-500"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -209,28 +211,29 @@ export default function Dashboard() {
                                         exit={{ opacity: 0, scale: 0.95 }}
                                         transition={{ duration: 0.2 }}
                                     >
-                                        <Card className="h-full hover:shadow-lg transition-all border-indigo-50 hover:border-indigo-100">
-                                            <CardHeader>
+                                        <Card className="h-full hover:shadow-[0_0_30px_rgba(99,102,241,0.1)] transition-all border-white/5 bg-white/5 backdrop-blur-xl group overflow-hidden">
+                                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <CardHeader className="relative">
                                                 <div className="flex justify-between items-start">
-                                                    <CardTitle className="text-indigo-900">{course.code}</CardTitle>
-                                                    <span className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+                                                    <CardTitle className="text-white group-hover:text-indigo-300 transition-colors">{course.code}</CardTitle>
+                                                    <span className="bg-indigo-600/90 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-extrabold shadow-lg border border-indigo-400/30">
                                                         K{course.price}
                                                     </span>
                                                 </div>
-                                                <CardDescription className="line-clamp-2">{course.name}</CardDescription>
+                                                <CardDescription className="line-clamp-2 text-white/50">{course.name}</CardDescription>
                                             </CardHeader>
-                                            <CardContent>
-                                                <p className="text-sm text-gray-600 line-clamp-2">
+                                            <CardContent className="relative">
+                                                <p className="text-sm text-white/70 line-clamp-2">
                                                     {course.description}
                                                 </p>
                                             </CardContent>
-                                            <CardFooter>
+                                            <CardFooter className="relative">
                                                 <Button
-                                                    className="w-full shadow-sm bg-indigo-600 hover:bg-indigo-700"
+                                                    className="w-full shadow-lg bg-indigo-600 hover:bg-indigo-500 border-0 transition-all hover:scale-[1.02] active:scale-[0.98]"
                                                     onClick={() => setSelectedCourse(course)}
                                                     disabled={subscribeMutation.isPending}
                                                 >
-                                                    Subscribe Now
+                                                    Unlock Course
                                                 </Button>
                                             </CardFooter>
                                         </Card>
@@ -307,7 +310,12 @@ export default function Dashboard() {
                             <Label className="text-gray-700 font-bold">Phone Number</Label>
                             <div className="relative">
                                 <Smartphone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                                <Input disabled value={user?.phoneNumber || ""} className="pl-9 bg-gray-50 border-gray-200" />
+                                <Input
+                                    value={phoneNumber || user?.phoneNumber || ""}
+                                    onChange={(e) => setPhoneNumber(e.target.value)}
+                                    className="pl-9 bg-white border-gray-200 text-gray-900"
+                                    placeholder="Enter phone number"
+                                />
                             </div>
                             <p className="text-[10px] text-gray-400 italic text-center uppercase tracking-widest pt-2">Powered by PhunziPay Gateway</p>
                         </div>
@@ -316,13 +324,23 @@ export default function Dashboard() {
                     <DialogFooter className="p-6 bg-gray-50">
                         <Button
                             className="w-full py-6 rounded-xl text-lg font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                            onClick={() => selectedCourse && subscribeMutation.mutate(selectedCourse.id)}
+                            onClick={() => {
+                                handleFlutterwavePayment({
+                                    callback: (response) => {
+                                        if (response.status === "successful") {
+                                            selectedCourse && subscribeMutation.mutate(selectedCourse.id);
+                                        }
+                                        closePaymentModal();
+                                    },
+                                    onClose: () => { },
+                                });
+                            }}
                             disabled={subscribeMutation.isPending}
                         >
                             {subscribeMutation.isPending ? (
                                 <>
                                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                    Processing...
+                                    Activating Subscription...
                                 </>
                             ) : (
                                 `Confirm Payment (K${selectedCourse?.price}.00)`

@@ -16,29 +16,11 @@ export default function CourseFeed() {
 
   const { data: course, isLoading: courseLoading } = useQuery<Course>({
     queryKey: [`/api/courses/${id}`],
-    queryFn: async () => {
-      const docRef = doc(db, "courses", id);
-      const docSnap = await getDoc(docRef);
-      if (!docSnap.exists()) throw new Error("Course not found");
-      return { ...docSnap.data(), id: docSnap.id as any } as Course;
-    }
   });
 
   const { data: notes, isLoading: notesLoading, error: notesError } = useQuery<Note[]>({
     queryKey: [`/api/courses/${id}/notes`],
     retry: false,
-    queryFn: async () => {
-      const q = query(
-        collection(db, "notes"),
-        where("courseId", "==", id),
-        orderBy("createdAt", "desc")
-      );
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id as any
-      } as Note));
-    }
   });
 
   if (courseLoading || notesLoading) {
@@ -47,22 +29,25 @@ export default function CourseFeed() {
 
   if (notesError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50">
-        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-sm border border-red-100">
-          <div className="h-16 w-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="h-8 w-8 text-red-500" />
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-[#0a0c10]">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white/5 backdrop-blur-2xl p-8 rounded-3xl shadow-2xl max-w-sm border border-white/10"
+        >
+          <div className="h-20 w-20 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(99,102,241,0.3)]">
+            <ShoppingCart className="h-10 w-10 text-indigo-400" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Not Subscribed</h2>
-          <p className="text-gray-500 mb-8">
-            You need an active subscription to {course?.code} to access these notes.
+          <h2 className="text-3xl font-bold text-white mb-3">Locked</h2>
+          <p className="text-indigo-100/60 mb-8 leading-relaxed">
+            Full access to {course?.code} notes requires a premium subscription.
           </p>
           <Link href="/">
-            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 py-6 rounded-xl shadow-lg shadow-indigo-100">
-              <ShoppingCart className="mr-2 h-5 w-5" />
-              Go to Marketplace
+            <Button className="w-full bg-indigo-600 hover:bg-indigo-500 py-7 rounded-2xl shadow-xl shadow-indigo-900/30 text-lg font-bold transition-all hover:scale-105 active:scale-95 border-0">
+              Unlock Now
             </Button>
           </Link>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -70,17 +55,17 @@ export default function CourseFeed() {
   if (!course) return <div>Course not found</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <header className="bg-white border-b sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 h-16 flex items-center gap-4">
+    <div className="min-h-screen bg-[#0a0c10] pb-20 text-white">
+      <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-10 shadow-lg">
+        <div className="container mx-auto px-4 h-20 flex items-center gap-4">
           <Link href="/">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
+            <Button variant="ghost" size="icon" className="hover:bg-white/10 transition-colors">
+              <ArrowLeft className="h-6 w-6 text-indigo-400" />
             </Button>
           </Link>
           <div>
-            <h1 className="text-lg font-bold text-gray-900">{course.code}</h1>
-            <p className="text-xs text-gray-500">{course.name}</p>
+            <h1 className="text-xl font-extrabold text-white tracking-tight">{course.code}</h1>
+            <p className="text-xs text-indigo-300/60 uppercase font-bold tracking-widest">{course.name}</p>
           </div>
         </div>
       </header>
@@ -98,31 +83,32 @@ export default function CourseFeed() {
               {/* Timeline Dot */}
               <div className={`absolute -left-[41px] top-4 h-5 w-5 rounded-full border-4 border-white ${note.type === 'pdf' ? 'bg-red-500' : 'bg-blue-500'} shadow-sm`} />
 
-              <Card className="hover:shadow-md transition-all hover:border-indigo-200">
-                <CardContent className="p-4">
+              <Card className="hover:shadow-[0_0_20px_rgba(99,102,241,0.1)] transition-all hover:border-indigo-500/30 bg-white/5 backdrop-blur-md border-white/10">
+                <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex gap-3">
-                      <div className={`p-3 rounded-lg ${note.type === 'pdf' ? 'bg-red-50' : 'bg-blue-50'}`}>
+                    <div className="flex gap-4">
+                      <div className={`p-4 rounded-2xl ${note.type === 'pdf' ? 'bg-red-500/10' : 'bg-blue-500/10'} shadow-inner`}>
                         {note.type === 'pdf' ? (
-                          <FileText className="h-6 w-6 text-red-600" />
+                          <FileText className="h-7 w-7 text-red-400" />
                         ) : (
-                          <Headphones className="h-6 w-6 text-blue-600" />
+                          <Headphones className="h-7 w-7 text-blue-400" />
                         )}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900">{note.title}</h3>
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                          <Calendar className="h-3 w-3" />
-                          {note.createdAt ? format(new Date(note.createdAt), "MMM d, yyyy") : 'Unknown Date'}
-                          <span className="text-gray-300">•</span>
-                          <span className="uppercase font-bold tracking-wider">{note.type}</span>
+                        <h3 className="font-bold text-lg text-white group-hover:text-indigo-400 transition-colors">{note.title}</h3>
+                        <div className="flex items-center gap-3 text-xs text-indigo-200/50 mt-2">
+                          <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {note.createdAt ? format(new Date(note.createdAt), "MMM d, yyyy") : 'Unknown Date'}
+                          </div>
+                          <span className="uppercase font-black text-[10px] tracking-[0.2em] bg-indigo-500/10 text-indigo-400 px-2 py-1 rounded-md">{note.type}</span>
                         </div>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" asChild className="hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200">
+                    <Button variant="outline" size="sm" asChild className="hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all border-white/10 bg-white/5 py-5 px-4 rounded-xl">
                       <a href={note.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
                         <Download className="h-4 w-4" />
-                        <span className="hidden sm:inline">Download</span>
+                        <span className="font-bold">Access</span>
                       </a>
                     </Button>
                   </div>
